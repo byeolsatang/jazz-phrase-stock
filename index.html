@@ -1095,12 +1095,12 @@ function closeSettings() {
   if (actEl)  actEl.style.display  = 'none';
 }
 
-loadSettings();
-loadFromSupabase();
-
 // ── Supabase ──────────────────────────────────────
 let sbUrl = '';
 let sbKey = '';
+
+loadSettings();
+loadFromSupabase();
 
 function loadSupabaseConfig() {
   sbUrl = localStorage.getItem('sbUrl') || '';
