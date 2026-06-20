@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jazz Phrase Stock</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #111820;
+    --surface: #182030;
+    --sur2:    #1e2a3a;
+    --border:  #2a3d52;
+    --terra:   #e8563a;
+    --steel:   #7a9ab5;
+    --ice:     #d6edf4;
+    --navy:    #2d5070;
+    --muted:   #5a7a94;
+    --text:    #d6edf4;
+    --mono:    'Space Mono', monospace;
+    --sans:    'Noto Sans JP', sans-serif;
+    /* tag category colors */
+    --tc-scale:    #7ab8d4;
+    --tc-approach: #c47a3a;
+    --tc-rhythm:   #7a9ab5;
+    --tc-source:   #9a7ab5;
+  }
+
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; display:grid; grid-template-rows:auto 1fr; }
+
+  /* Header */
+  header { border-bottom:1px solid var(--border); padding:0 24px; display:flex; align-items:center; gap:20px; height:56px; background:var(--surface); }
+  .logo { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--ice); letter-spacing:.08em; white-space:nowrap; }
+  .logo span { color:var(--terra); }
+  .search-wrap { flex:1; max-width:480px; position:relative; }
+  .search-wrap input { width:100%; background:var(--sur2); border:1px solid var(--border); border-radius:6px; padding:6px 12px 6px 32px; color:var(--text); font-family:var(--sans); font-size:13px; outline:none; transition:border-color .15s; }
+  .search-wrap input:focus { border-color:var(--steel); }
+  .search-wrap::before { content:'⌕'; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:15px; pointer-events:none; }
+  .btn-add { margin-left:auto; background:var(--terra); color:#fff; border:none; border-radius:6px; padding:7px 16px; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.06em; cursor:pointer; white-space:nowrap; transition:opacity .15s; }
+  .btn-add:hover { opacity:.85; }
+  .btn-settings { background:var(--sur2); color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:7px 12px; font-size:15px; cursor:pointer; transition:all .15s; line-height:1; }
+  .btn-settings:hover { color:var(--ice); border-color:var(--steel); }
+  .btn-settings.connected { color:#7ab57a; border-color:rgba(122,181,122,.4); }
+
+  /* Sync bar */
+  .sync-bar { display:none; align-items:center; gap:10px; padding:8px 16px; background:rgba(74,181,122,.07); border-bottom:1px solid rgba(122,181,122,.2); font-size:12px; }
+  .sync-bar.show { display:flex; }
+  .sync-status { color:#7ab57a; font-family:var(--mono); font-size:11px; }
+  .sync-btn { background:none; border:1px solid rgba(122,181,122,.4); border-radius:5px; color:#7ab57a; font-family:var(--mono); font-size:11px; padding:3px 10px; cursor:pointer; transition:all .12s; }
+  .sync-btn:hover { background:rgba(122,181,122,.1); }
+  .sync-err { color:var(--terra); font-size:11px; font-family:var(--mono); }
+
+  /* Settings modal extras */
+  .settings-modal { width:500px; }
+  .settings-section { margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .settings-section:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .settings-section-title { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--steel); letter-spacing:.08em; text-transform:uppercase; margin-bottom:12px; }
+  .token-wrap { position:relative; }
+  .token-wrap input { padding-right:60px; font-family:var(--mono); font-size:11px; letter-spacing:.03em; }
+  .token-toggle { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:11px; cursor:pointer; font-family:var(--mono); }
+  .token-toggle:hover { color:var(--ice); }
+  .conn-status { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--muted); }
+  .conn-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .conn-dot.ok { background:#7ab57a; }
+  .conn-dot.err { background:var(--terra); }
+  .btn-test { background:var(--sur2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:11px; padding:6px 14px; cursor:pointer; transition:all .12s; margin-top:10px; display:inline-block; }
+  .btn-test:hover { border-color:var(--steel); color:var(--ice); }
+  .import-list { margin-top:10px; background:var(--sur2); border:1px solid var(--border); border-radius:6px; padding:8px; max-height:200px; overflow-y:auto; }
+  .import-item { display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid var(--border); }
+  .import-item:last-child { border-bottom:none; }
+  .import-item input[type=checkbox] { accent-color:var(--terra); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
+  .import-item-title { flex:1; font-size:12px; color:var(--text); }
+  .import-item-id { font-family:var(--mono); font-size:10px; color:var(--muted); }
+  .btn-import { background:var(--terra); border:none; border-radius:6px; color:#fff; font-family:var(--mono); font-size:12px; font-weight:700; padding:8px 20px; cursor:pointer; margin-top:10px; transition:opacity .15s; }
+  .btn-import:hover { opacity:.85; }
+  .import-empty { color:var(--muted); font-size:12px; padding:12px 4px; font-style:italic; }
+
+  /* Layout */
+  .app { display:grid; grid-template-columns:230px 1fr; overflow:hidden; height:calc(100vh - 56px); }
+
+  /* Sidebar */
+  aside { border-right:1px solid var(--border); background:var(--surface); overflow-y:auto; padding:16px 0; }
+  .sidebar-section { margin-bottom:20px; }
+  .sidebar-label { font-family:var(--mono); font-size:10px; font-weight:700; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; padding:0 16px 8px; }
+  .filter-btn { display:flex; align-items:center; gap:8px; width:100%; background:none; border:none; color:var(--text); font-family:var(--sans); font-size:13px; padding:6px 16px; cursor:pointer; text-align:left; border-left:2px solid transparent; transition:background .1s,border-color .1s,color .1s; }
+  .filter-btn:hover { background:var(--sur2); }
+  .filter-btn.active { border-left-color:var(--ice); color:var(--ice); background:rgba(214,237,244,.07); }
+  .filter-btn .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .filter-btn .count { margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--muted); }
+
+  /* Tag filter pills in sidebar */
+  .tag-filter-wrap { padding:0 12px 4px; display:flex; flex-wrap:wrap; gap:4px; }
+  .tag-filter-pill { background:var(--sur2); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:var(--mono); font-size:10px; padding:3px 9px; cursor:pointer; transition:all .12s; white-space:nowrap; }
+  .tag-filter-pill:hover { border-color:var(--steel); color:var(--ice); }
+  .tag-filter-pill.active { background:var(--navy); border-color:var(--steel); color:var(--ice); }
+
+  /* Key grid */
+  .key-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; padding:4px 16px; }
+  .key-btn { background:var(--sur2); border:1px solid var(--border); border-radius:4px; color:var(--muted); font-family:var(--mono); font-size:10px; padding:4px 2px; cursor:pointer; text-align:center; transition:all .1s; }
+  .key-btn.active,.key-btn:hover { background:var(--navy); color:var(--ice); border-color:var(--steel); }
+
+  /* Main */
+  main { overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:14px; }
+
+  /* Stats */
+  .stats-bar { display:flex; align-items:center; gap:20px; padding:0 0 12px; border-bottom:1px solid var(--border); }
+  .stat { display:flex; align-items:baseline; gap:5px; }
+  .stat-num { font-family:var(--mono); font-size:20px; font-weight:700; }
+  .stat-num.t { color:var(--terra); }
+  .stat-num.i { color:var(--ice); }
+  .stat-num.s { color:var(--steel); }
+  .stat-label { font-size:11px; color:var(--muted); }
+
+  /* Card */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }
+  .card:hover { border-color:var(--steel); box-shadow:0 0 0 1px rgba(122,154,181,.2); }
+  .card.expanded { border-color:var(--steel); }
+  .card-head { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; }
+  .card-color { width:4px; align-self:stretch; border-radius:2px; flex-shrink:0; }
+  .card-meta { flex:1; min-width:0; }
+  .card-title { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-sub { font-size:12px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+  /* Tags */
+  .tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.05em; border:1px solid; }
+  .tag-prog  { color:var(--terra);  border-color:rgba(232,86,58,.4);   background:rgba(232,86,58,.1); }
+  .tag-key   { color:var(--muted);  border-color:var(--border);         background:var(--sur2); }
+  .tag-level-b { color:var(--ice);   border-color:rgba(214,237,244,.3); background:rgba(214,237,244,.07); }
+  .tag-level-m { color:var(--steel); border-color:rgba(122,154,181,.4); background:rgba(122,154,181,.1); }
+  .tag-level-a { color:var(--terra); border-color:rgba(232,86,58,.4);   background:rgba(232,86,58,.1); }
+  /* technique tags by category */
+  .tag-scale    { color:var(--tc-scale);    border-color:rgba(122,184,212,.4); background:rgba(122,184,212,.08); }
+  .tag-approach { color:var(--tc-approach); border-color:rgba(196,122,58,.4);  background:rgba(196,122,58,.08); }
+  .tag-rhythm   { color:var(--tc-rhythm);   border-color:rgba(122,154,181,.4); background:rgba(122,154,181,.08); }
+  .tag-source   { color:var(--tc-source);   border-color:rgba(154,122,181,.4); background:rgba(154,122,181,.08); }
+  .tag-custom   { color:#9ab57a;            border-color:rgba(154,181,122,.4); background:rgba(154,181,122,.08); }
+
+  .card-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .icon-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:4px; border-radius:4px; transition:color .15s,background .15s; line-height:1; }
+  .icon-btn:hover { color:var(--text); background:var(--sur2); }
+  .icon-btn.fav { color:var(--terra); }
+  .icon-btn.done { color:#7ab57a; }
+
+  /* Expand panel */
+  .score-panel { display:none; border-top:1px solid var(--border); background:var(--sur2); }
+  .score-panel.open { display:block; }
+  .panel-inner { padding:16px; display:grid; grid-template-columns:1fr 260px; gap:16px; }
+  @media (max-width:860px) { .panel-inner { grid-template-columns:1fr; } }
+
+  /* ── Mobile ─────────────────────────────────────── */
+  @media (max-width:640px) {
+    header { padding:0 12px; gap:8px; height:52px; }
+    .logo { font-size:12px; }
+    .search-wrap { display:none; }
+    .btn-add { padding:7px 12px; font-size:11px; }
+
+    .app { grid-template-columns:1fr; height:auto; min-height:calc(100vh - 52px); }
+
+    /* サイドバーをボトムシート風に */
+    aside {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0;
+      height:60vh;
+      border-right:none;
+      border-top:1px solid var(--border);
+      border-radius:16px 16px 0 0;
+      z-index:50;
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+    aside.open { display:block; }
+
+    /* ボトムナビ */
+    .bottom-nav {
+      display:flex;
+      position:fixed; bottom:0; left:0; right:0;
+      background:var(--surface);
+      border-top:1px solid var(--border);
+      padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index:40;
+    }
+    .bottom-nav-btn {
+      flex:1; background:none; border:none;
+      color:var(--muted); font-size:10px;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      cursor:pointer; padding:4px;
+      font-family:var(--mono);
+      transition:color .15s;
+    }
+    .bottom-nav-btn .bn-icon { font-size:20px; line-height:1; }
+    .bottom-nav-btn.active { color:var(--ice); }
+
+    main { padding:12px; padding-bottom:80px; }
+
+    .stats-bar { gap:12px; }
+    .stat-num { font-size:16px; }
+
+    .card-title { font-size:13px; }
+    .card-head { padding:12px; }
+
+    .panel-inner { padding:12px; gap:12px; }
+    .embed-real { height:160px; }
+    .embed-placeholder { height:160px; }
+
+    .modal { padding:16px; max-height:85vh; }
+    .modal-row { flex-direction:column; gap:0; }
+    .settings-modal { width:95vw; }
+
+    .key-grid { grid-template-columns:repeat(6,1fr); }
+
+    /* 検索はヘッダーに代わりフルワイドで表示 */
+    .mobile-search-bar {
+      display:flex;
+      padding:8px 12px;
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+    }
+    .mobile-search-bar input {
+      flex:1; background:var(--sur2); border:1px solid var(--border);
+      border-radius:6px; padding:7px 12px; color:var(--text);
+      font-family:var(--sans); font-size:13px; outline:none;
+    }
+    .mobile-search-bar input:focus { border-color:var(--steel); }
+  }
+
+  @media (min-width:641px) {
+    .bottom-nav { display:none; }
+    .mobile-search-bar { display:none; }
+  }
+
+  .embed-placeholder { background:#0e1620; border:1px dashed var(--border); border-radius:8px; height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); font-size:13px; }
+  .embed-placeholder .staff-icon { font-size:40px; opacity:.25; }
+  .embed-real { border-radius:8px; overflow:hidden; height:200px; }
+  .embed-real iframe { width:100%; height:100%; border:none; display:block; }
+
+  .panel-right { display:flex; flex-direction:column; gap:10px; }
+  .panel-toolbar { display:flex; flex-wrap:wrap; gap:6px; }
+  .panel-btn { background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:11px; padding:5px 11px; cursor:pointer; transition:border-color .15s,color .15s; }
+  .panel-btn:hover { border-color:var(--steel); color:var(--ice); }
+  .panel-btn.play { border-color:var(--steel); color:var(--ice); }
+
+  /* Notes */
+  .notes-block { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; flex:1; }
+  .notes-block-label { font-family:var(--mono); font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
+  .notes-text { font-size:12px; color:var(--ice); line-height:1.75; white-space:pre-wrap; }
+  .notes-text.empty { color:var(--muted); font-style:italic; }
+
+  /* technique tags on card detail */
+  .tech-tags { display:flex; flex-wrap:wrap; gap:5px; }
+
+  /* ── Modal ── */
+  .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; }
+  .modal-backdrop.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; width:560px; max-width:95vw; padding:24px; max-height:90vh; overflow-y:auto; }
+  .modal h2 { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--ice); margin-bottom:20px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:11px; font-family:var(--mono); color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+  .field input,.field select,.field textarea { width:100%; background:var(--sur2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-family:var(--sans); font-size:13px; outline:none; transition:border-color .15s; }
+  .field input:focus,.field select:focus,.field textarea:focus { border-color:var(--steel); }
+  .field textarea { resize:vertical; min-height:80px; }
+  .field select option { background:var(--surface); }
+  .modal-row { display:flex; gap:12px; }
+  .modal-row .field { flex:1; }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+  .btn-cancel { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-family:var(--mono); font-size:12px; padding:8px 20px; cursor:pointer; transition:border-color .15s; }
+  .btn-cancel:hover { border-color:var(--text); color:var(--text); }
+  .btn-save { background:var(--terra); border:none; border-radius:6px; color:#fff; font-family:var(--mono); font-size:12px; font-weight:700; padding:8px 20px; cursor:pointer; transition:opacity .15s; }
+  .btn-save:hover { opacity:.85; }
+
+  /* Tag picker in modal */
+  .tag-picker-section { margin-bottom:6px; }
+  .tag-picker-cat { font-family:var(--mono); font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
+  .tag-picker-pills { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .tpill { background:var(--sur2); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:var(--mono); font-size:10px; padding:3px 10px; cursor:pointer; transition:all .12s; user-select:none; }
+  .tpill:hover { border-color:var(--steel); color:var(--ice); }
+  .tpill.sel { border-color:var(--steel); color:var(--ice); background:var(--navy); }
+  .tpill.sel.cat-scale    { border-color:var(--tc-scale);    color:var(--tc-scale);    background:rgba(122,184,212,.12); }
+  .tpill.sel.cat-approach { border-color:var(--tc-approach); color:var(--tc-approach); background:rgba(196,122,58,.12); }
+  .tpill.sel.cat-rhythm   { border-color:var(--tc-rhythm);   color:var(--tc-rhythm);   background:rgba(122,154,181,.12); }
+  .tpill.sel.cat-source   { border-color:var(--tc-source);   color:var(--tc-source);   background:rgba(154,122,181,.12); }
+  .custom-tag-row { display:flex; gap:6px; margin-top:4px; }
+  .custom-tag-row input { flex:1; background:var(--sur2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text); font-family:var(--mono); font-size:11px; outline:none; transition:border-color .15s; }
+  .custom-tag-row input:focus { border-color:var(--steel); }
+  .custom-tag-row button { background:var(--sur2); border:1px solid var(--border); border-radius:6px; color:var(--muted); font-family:var(--mono); font-size:11px; padding:6px 12px; cursor:pointer; white-space:nowrap; transition:all .12s; }
+  .custom-tag-row button:hover { border-color:var(--steel); color:var(--ice); }
+  .selected-tags-preview { display:flex; flex-wrap:wrap; gap:5px; min-height:22px; margin-top:8px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Jazz<span>Phrase</span>.stock</div>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="フレーズ名・メモ・タグを検索…">
+  </div>
+  <button class="btn-add" onclick="openModal()">＋ フレーズ追加</button>
+  <button class="btn-settings" id="settingsBtn" onclick="openSettings()" title="Flat.io 設定">⚙</button>
+</header>
+<div class="sync-bar" id="syncBar">
+  <span class="sync-status" id="syncStatus">● Flat.io 接続済み</span>
+  <button class="sync-btn" onclick="fetchCollectionScores()">↻ Jazz Phraseを同期</button>
+  <span class="sync-err" id="syncErr"></span>
+</div>
+
+<!-- モバイル検索バー -->
+<div class="mobile-search-bar">
+  <input type="text" id="searchInputMobile" placeholder="フレーズ名・メモ・タグを検索…">
+</div>
+
+<div class="app">
+  <aside id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">フィルター</div>
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">
+        <span class="dot" style="background:var(--text)"></span>すべて<span class="count" id="count-all">0</span>
+      </button>
+      <button class="filter-btn" data-filter="fav" onclick="setFilter('fav',this)">
+        <span class="dot" style="background:var(--terra)"></span>お気に入り★<span class="count" id="count-fav">0</span>
+      </button>
+      <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">
+        <span class="dot" style="background:#7ab57a"></span>練習済み✓<span class="count" id="count-done">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">コード進行</div>
+      <button class="filter-btn" data-filter="ii-V-I" onclick="setFilter('ii-V-I',this)">
+        <span class="dot" style="background:var(--terra)"></span>ii–V–I<span class="count" id="count-ii-V-I">0</span>
+      </button>
+      <button class="filter-btn" data-filter="ii-V" onclick="setFilter('ii-V',this)">
+        <span class="dot" style="background:#c4724e"></span>ii–V<span class="count" id="count-ii-V">0</span>
+      </button>
+      <button class="filter-btn" data-filter="turnaround" onclick="setFilter('turnaround',this)">
+        <span class="dot" style="background:var(--navy)"></span>ターンアラウンド<span class="count" id="count-turnaround">0</span>
+      </button>
+      <button class="filter-btn" data-filter="blues" onclick="setFilter('blues',this)">
+        <span class="dot" style="background:var(--steel)"></span>ブルース<span class="count" id="count-blues">0</span>
+      </button>
+      <button class="filter-btn" data-filter="other" onclick="setFilter('other',this)">
+        <span class="dot" style="background:var(--muted)"></span>その他<span class="count" id="count-other">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">スケール / 奏法タグ</div>
+      <div class="tag-filter-wrap" id="tagFilterWrap">
+        <!-- JS で生成 -->
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">キー</div>
+      <div class="key-grid">
+        <button class="key-btn active" data-key="all" onclick="setKeyFilter('all',this)">All</button>
+        <button class="key-btn" data-key="C"  onclick="setKeyFilter('C',this)">C</button>
+        <button class="key-btn" data-key="F"  onclick="setKeyFilter('F',this)">F</button>
+        <button class="key-btn" data-key="Bb" onclick="setKeyFilter('Bb',this)">B♭</button>
+        <button class="key-btn" data-key="Eb" onclick="setKeyFilter('Eb',this)">E♭</button>
+        <button class="key-btn" data-key="Ab" onclick="setKeyFilter('Ab',this)">A♭</button>
+        <button class="key-btn" data-key="Db" onclick="setKeyFilter('Db',this)">D♭</button>
+        <button class="key-btn" data-key="G"  onclick="setKeyFilter('G',this)">G</button>
+        <button class="key-btn" data-key="D"  onclick="setKeyFilter('D',this)">D</button>
+        <button class="key-btn" data-key="A"  onclick="setKeyFilter('A',this)">A</button>
+        <button class="key-btn" data-key="E"  onclick="setKeyFilter('E',this)">E</button>
+        <button class="key-btn" data-key="B"  onclick="setKeyFilter('B',this)">B</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">難易度</div>
+      <button class="filter-btn" data-filter="beginner" onclick="setFilter('beginner',this)">
+        <span class="dot" style="background:var(--ice)"></span>入門<span class="count" id="count-beginner">0</span>
+      </button>
+      <button class="filter-btn" data-filter="intermediate" onclick="setFilter('intermediate',this)">
+        <span class="dot" style="background:var(--steel)"></span>中級<span class="count" id="count-intermediate">0</span>
+      </button>
+      <button class="filter-btn" data-filter="advanced" onclick="setFilter('advanced',this)">
+        <span class="dot" style="background:var(--terra)"></span>上級<span class="count" id="count-advanced">0</span>
+      </button>
+    </div>
+  </aside>
+
+  <main id="phraseList"></main>
+</div>
+
+<!-- モバイルボトムナビ -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn active" id="bn-list" onclick="mobileNav('list')">
+    <span class="bn-icon">♩</span>フレーズ
+  </button>
+  <button class="bottom-nav-btn" id="bn-filter" onclick="mobileNav('filter')">
+    <span class="bn-icon">☰</span>フィルター
+  </button>
+  <button class="bottom-nav-btn" id="bn-add" onclick="openModal()">
+    <span class="bn-icon">＋</span>追加
+  </button>
+  <button class="bottom-nav-btn" id="bn-settings" onclick="openSettings()">
+    <span class="bn-icon">⚙</span>設定
+  </button>
+</nav>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>// フレーズ追加・編集</h2>
+    <div class="field">
+      <label>フレーズ名</label>
+      <input type="text" id="f-name" placeholder="例: Bebop descending scale on ii-V-I">
+    </div>
+    <div class="modal-row">
+      <div class="field">
+        <label>コード進行</label>
+        <select id="f-prog">
+          <option value="ii-V-I">ii–V–I</option>
+          <option value="ii-V">ii–V</option>
+          <option value="turnaround">ターンアラウンド</option>
+          <option value="blues">ブルース</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>キー</label>
+        <select id="f-key">
+          <option value="C">C</option><option value="F">F</option>
+          <option value="Bb">B♭</option><option value="Eb">E♭</option>
+          <option value="Ab">A♭</option><option value="Db">D♭</option>
+          <option value="G">G</option><option value="D">D</option>
+          <option value="A">A</option><option value="E">E</option><option value="B">B</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>難易度</label>
+        <select id="f-level">
+          <option value="beginner">入門</option>
+          <option value="intermediate">中級</option>
+          <option value="advanced">上級</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tag picker -->
+    <div class="field">
+      <label>スケール / 奏法タグ</label>
+      <div class="tag-picker-section">
+        <div class="tag-picker-cat" style="color:var(--tc-scale)">▸ スケール</div>
+        <div class="tag-picker-pills" id="tp-scale"></div>
+        <div class="tag-picker-cat" style="color:var(--tc-approach)">▸ アプローチ</div>
+        <div class="tag-picker-pills" id="tp-approach"></div>
+        <div class="tag-picker-cat" style="color:var(--tc-rhythm)">▸ リズム</div>
+        <div class="tag-picker-pills" id="tp-rhythm"></div>
+        <div class="tag-picker-cat" style="color:var(--tc-source)">▸ 出典</div>
+        <div class="tag-picker-pills" id="tp-source"></div>
+        <div class="tag-picker-cat" style="color:#9ab57a">▸ カスタム追加</div>
+        <div class="custom-tag-row">
+          <input type="text" id="customTagInput" placeholder="自由入力タグ…">
+          <button onclick="addCustomTag()">追加</button>
+        </div>
+        <div class="selected-tags-preview" id="selectedTagsPreview"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Flat.io スコアID（任意）</label>
+      <input type="text" id="f-scoreid" placeholder="例: 5ce6a27f052b2a74a91f4a6d">
+    </div>
+    <div class="field">
+      <label>メモ（スケール形・使いどころ・コツなど）</label>
+      <textarea id="f-notes" placeholder="例: Bebop scaleの下降形。G7でドミナントから解決する直前に使う。クロマチックアプローチで4度上から入るとよい。"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="savePhrase()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tag definitions ───────────────────────────────
+const TAG_PRESETS = {
+  scale: [
+    'Bebop scale', 'Bebop 下降形', 'Bebop 上昇形',
+    'Pentatonic', 'Blues scale', 'Mixolydian',
+    'Dorian', 'Altered scale', 'Whole tone',
+    'Diminished scale', 'Lydian dominant', 'Half-dim scale',
+  ],
+  approach: [
+    '半音アプローチ', 'クロマチック', 'トライトーン代理',
+    'コードトーン', 'ガイドトーン', 'アウトサイド',
+    'エンクロージャー', 'ダイアトニック', '代理コード',
+  ],
+  rhythm: [
+    'シンコペ', 'トリプレット', '8分音符主体',
+    '16分音符', 'ターン', 'ロングトーン',
+  ],
+  source: [
+    'Charlie Parker', 'John Coltrane', 'Bill Evans',
+    'Herbie Hancock', 'McCoy Tyner', 'Oscar Peterson',
+    '自作', 'セッション採譜',
+  ],
+};
+
+const TAG_CAT_CLASS = {
+  scale:'tag-scale', approach:'tag-approach', rhythm:'tag-rhythm', source:'tag-source', custom:'tag-custom'
+};
+
+// ── Data ─────────────────────────────────────────
+const PROG_COLORS = {
+  'ii-V-I':'#e8563a','ii-V':'#c4724e','turnaround':'#2d5070','blues':'#7a9ab5','other':'#3a5a74'
+};
+const LEVEL_TAG = {
+  beginner:['入門','tag-level-b'], intermediate:['中級','tag-level-m'], advanced:['上級','tag-level-a']
+};
+const PROG_LABEL = {
+  'ii-V-I':'ii–V–I','ii-V':'ii–V','turnaround':'ターンアラウンド','blues':'ブルース','other':'その他'
+};
+
+const DEFAULT_PHRASES = [
+  { id:1, name:'Bebop ii–V–I lick (C)', prog:'ii-V-I', key:'C', level:'intermediate',
+    scoreId:'', fav:false, done:false,
+    tags:[{cat:'scale',val:'Bebop 下降形'},{cat:'approach',val:'コードトーン'}],
+    notes:'Dm7→G7→Cmaj7 の定番フレーズ。Bebop scaleの下降形を使い8分音符主体で弾く。G7の3rdから始めて1オクターブ下がる。' },
+  { id:2, name:'Tritone sub approach (F)', prog:'ii-V-I', key:'F', level:'advanced',
+    scoreId:'', fav:true, done:false,
+    tags:[{cat:'approach',val:'トライトーン代理'},{cat:'approach',val:'半音アプローチ'}],
+    notes:'V7をトライトーン代理で装飾。Bb7→E7→Fmaj7 の半音下行サウンド。アルタードスケールとの相性がよい。' },
+  { id:3, name:'Pentatonic ii–V (Bb)', prog:'ii-V', key:'Bb', level:'beginner',
+    scoreId:'', fav:false, done:true,
+    tags:[{cat:'scale',val:'Pentatonic'},{cat:'rhythm',val:'8分音符主体'}],
+    notes:'Cm7→F7 にBb メジャーペンタを乗せるシンプルな入門フレーズ。ルートから5thへ上昇後に下降。' },
+  { id:4, name:'I–VI–ii–V ターンアラウンド', prog:'turnaround', key:'C', level:'intermediate',
+    scoreId:'', fav:true, done:false,
+    tags:[{cat:'approach',val:'ガイドトーン'},{cat:'rhythm',val:'トリプレット'}],
+    notes:'Cmaj7–A7–Dm7–G7。各コードのガイドトーン（3rd→7th）をトリプレットで繋ぐ。フレーズ終止の定番。' },
+  { id:5, name:'Blues scale run (Bb)', prog:'blues', key:'Bb', level:'beginner',
+    scoreId:'', fav:false, done:false,
+    tags:[{cat:'scale',val:'Blues scale'},{cat:'source',val:'自作'}],
+    notes:'Bb ブルーススケールを使った12小節フレーズの入り。フラット5thの使い方がポイント。' },
+];
+
+function loadPhrases() {
+  try {
+    const saved = localStorage.getItem('jazzPhrases');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return DEFAULT_PHRASES;
+}
+
+function savePhrases() {
+  // localStorageにも保存（オフラインバックアップ）
+  try {
+    localStorage.setItem('jazzPhrases', JSON.stringify(phrases));
+    localStorage.setItem('jazzNextId', String(nextId));
+  } catch(e) {}
+  // Supabaseにも同期
+  syncToSupabase();
+}
+
+let phrases = loadPhrases();
+let nextId = parseInt(localStorage.getItem('jazzNextId') || '6');
+
+// ── State ─────────────────────────────────────────
+let activeFilter = 'all';
+let activeKey = 'all';
+let activeTagFilter = null;
+let expandedId = null;
+let searchQuery = '';
+let selectedTags = []; // modal state
+
+// ── Tag picker setup ──────────────────────────────
+function buildTagPicker() {
+  Object.entries(TAG_PRESETS).forEach(([cat, tags]) => {
+    const wrap = document.getElementById(`tp-${cat}`);
+    if (!wrap) return;
+    wrap.innerHTML = tags.map(t => `
+      <span class="tpill cat-${cat}" data-cat="${cat}" data-val="${t}" onclick="toggleTagPill(this,'${cat}','${t}')">${t}</span>
+    `).join('');
+  });
+}
+buildTagPicker();
+
+function toggleTagPill(el, cat, val) {
+  const idx = selectedTags.findIndex(t => t.cat===cat && t.val===val);
+  if (idx >= 0) { selectedTags.splice(idx,1); el.classList.remove('sel'); }
+  else { selectedTags.push({cat,val}); el.classList.add('sel'); }
+  renderSelectedTagsPreview();
+}
+
+function addCustomTag() {
+  const input = document.getElementById('customTagInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!selectedTags.find(t => t.val===val)) selectedTags.push({cat:'custom',val});
+  input.value = '';
+  renderSelectedTagsPreview();
+}
+
+function removeSelectedTag(val) {
+  selectedTags = selectedTags.filter(t => t.val !== val);
+  // uncheck pill if exists
+  document.querySelectorAll(`.tpill`).forEach(p => { if (p.dataset.val===val) p.classList.remove('sel'); });
+  renderSelectedTagsPreview();
+}
+
+function renderSelectedTagsPreview() {
+  const wrap = document.getElementById('selectedTagsPreview');
+  wrap.innerHTML = selectedTags.map(t =>
+    `<span class="tag ${TAG_CAT_CLASS[t.cat]||'tag-custom'}" style="cursor:pointer" onclick="removeSelectedTag('${t.val.replace(/'/g,"\\'")}')">
+      ${t.val} ✕
+    </span>`
+  ).join('');
+}
+
+function syncTagPillsToSelected() {
+  document.querySelectorAll('.tpill').forEach(p => {
+    const matched = selectedTags.find(t => t.cat===p.dataset.cat && t.val===p.dataset.val);
+    p.classList.toggle('sel', !!matched);
+  });
+  renderSelectedTagsPreview();
+}
+
+// ── Tag filter sidebar ────────────────────────────
+function buildSidebarTagFilter() {
+  const allTags = {};
+  phrases.forEach(p => p.tags.forEach(t => {
+    allTags[t.val] = (allTags[t.val]||0) + 1;
+  }));
+  const wrap = document.getElementById('tagFilterWrap');
+  if (!Object.keys(allTags).length) { wrap.innerHTML = `<span style="color:var(--muted);font-size:11px;padding:0 4px">タグ未登録</span>`; return; }
+  wrap.innerHTML = Object.entries(allTags)
+    .sort((a,b) => b[1]-a[1])
+    .map(([val,cnt]) => {
+      const cat = phrases.flatMap(p=>p.tags).find(t=>t.val===val)?.cat || 'custom';
+      const active = activeTagFilter===val ? 'active' : '';
+      return `<span class="tag-filter-pill ${active}" onclick="setTagFilter('${val.replace(/'/g,"\\'")}',this)">${val} <span style="opacity:.6">${cnt}</span></span>`;
+    }).join('');
+}
+
+function setTagFilter(val, el) {
+  if (activeTagFilter === val) {
+    activeTagFilter = null;
+    document.querySelectorAll('.tag-filter-pill').forEach(p=>p.classList.remove('active'));
+  } else {
+    activeTagFilter = val;
+    document.querySelectorAll('.tag-filter-pill').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+  }
+  render();
+}
+
+// ── Filter ────────────────────────────────────────
+function getFiltered() {
+  return phrases.filter(p => {
+    if (searchQuery) {
+      const hay = (p.name+p.notes+p.tags.map(t=>t.val).join(' ')).toLowerCase();
+      if (!hay.includes(searchQuery)) return false;
+    }
+    if (activeKey !== 'all' && p.key !== activeKey) return false;
+    if (activeTagFilter && !p.tags.find(t=>t.val===activeTagFilter)) return false;
+    if (activeFilter==='all') return true;
+    if (activeFilter==='fav') return p.fav;
+    if (activeFilter==='done') return p.done;
+    if (['ii-V-I','ii-V','turnaround','blues','other'].includes(activeFilter)) return p.prog===activeFilter;
+    if (['beginner','intermediate','advanced'].includes(activeFilter)) return p.level===activeFilter;
+    return true;
+  });
+}
+
+// ── Render ────────────────────────────────────────
+function render() {
+  const list = getFiltered();
+  const container = document.getElementById('phraseList');
+
+  const statsHtml = `<div class="stats-bar">
+    <div class="stat"><span class="stat-num t">${phrases.length}</span><span class="stat-label">フレーズ</span></div>
+    <div class="stat"><span class="stat-num t">★ ${phrases.filter(p=>p.fav).length}</span><span class="stat-label">お気に入り</span></div>
+    <div class="stat"><span class="stat-num s">✓ ${phrases.filter(p=>p.done).length}</span><span class="stat-label">練習済み</span></div>
+    <div class="stat"><span class="stat-num i">${[...new Set(phrases.map(p=>p.key))].length}</span><span class="stat-label">キー</span></div>
+  </div>`;
+
+  const cardsHtml = list.map(p => {
+    const [lvLabel,lvClass] = LEVEL_TAG[p.level];
+    const exp = expandedId===p.id;
+    const techTagsHtml = p.tags.map(t =>
+      `<span class="tag ${TAG_CAT_CLASS[t.cat]||'tag-custom'}">${t.val}</span>`
+    ).join('');
+
+    return `<div class="card ${exp?'expanded':''}" id="card-${p.id}">
+      <div class="card-head" onclick="toggleExpand(${p.id})">
+        <div class="card-color" style="background:${PROG_COLORS[p.prog]}"></div>
+        <div class="card-meta">
+          <div class="card-title">${esc(p.name)}</div>
+          <div class="card-sub">
+            <span class="tag tag-prog">${PROG_LABEL[p.prog]}</span>
+            <span class="tag tag-key">Key: ${p.key}</span>
+            <span class="tag ${lvClass}">${lvLabel}</span>
+            ${techTagsHtml}
+          </div>
+        </div>
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="icon-btn ${p.done?'done':''}" title="練習済みトグル" onclick="toggleDone(${p.id})">${p.done?'✓':'○'}</button>
+          <button class="icon-btn ${p.fav?'fav':''}" title="お気に入り" onclick="toggleFav(${p.id})">${p.fav?'★':'☆'}</button>
+          <button class="icon-btn" title="削除" onclick="deletePhrase(${p.id})">✕</button>
+          <button class="icon-btn" style="font-size:12px">${exp?'▲':'▼'}</button>
+        </div>
+      </div>
+      <div class="score-panel ${exp?'open':''}">
+        <div class="panel-inner">
+          <div>
+            ${p.scoreId
+              ? `<div class="embed-real"><iframe src="https://flat.io/embed/${p.scoreId}?layout=compact&controlsPosition=bottom&appId=6497b624ac329cd68ba7e51d" allowfullscreen loading="lazy"></iframe></div>`
+              : `<div class="embed-placeholder"><div class="staff-icon">♩♪♫♬</div><span>Flat.io スコアIDを登録すると楽譜が表示されます</span></div>`}
+            <div class="panel-toolbar" style="margin-top:10px">
+              ${p.scoreId?`<button class="panel-btn play">▶ 再生</button>`:''}
+              <button class="panel-btn" onclick="copyScoreLink(${p.id})">🔗 リンク</button>
+              <button class="panel-btn" onclick="editPhrase(${p.id})">✏ 編集</button>
+            </div>
+          </div>
+          <div class="panel-right">
+            <div class="notes-block">
+              <div class="notes-block-label">📝 メモ</div>
+              <div class="notes-text ${p.notes?'':'empty'}">${p.notes ? esc(p.notes) : 'メモなし'}</div>
+            </div>
+            ${p.tags.length ? `<div class="notes-block">
+              <div class="notes-block-label">🏷 タグ</div>
+              <div class="tech-tags">${techTagsHtml}</div>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = statsHtml + (list.length ? cardsHtml : `<div style="color:var(--muted);font-size:13px;padding:40px 0;text-align:center">該当フレーズなし</div>`);
+  updateCounts();
+  buildSidebarTagFilter();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateCounts() {
+  const map = {
+    all: phrases.length,
+    fav: phrases.filter(p=>p.fav).length,
+    done: phrases.filter(p=>p.done).length,
+    'ii-V-I': phrases.filter(p=>p.prog==='ii-V-I').length,
+    'ii-V': phrases.filter(p=>p.prog==='ii-V').length,
+    turnaround: phrases.filter(p=>p.prog==='turnaround').length,
+    blues: phrases.filter(p=>p.prog==='blues').length,
+    other: phrases.filter(p=>p.prog==='other').length,
+    beginner: phrases.filter(p=>p.level==='beginner').length,
+    intermediate: phrases.filter(p=>p.level==='intermediate').length,
+    advanced: phrases.filter(p=>p.level==='advanced').length,
+  };
+  Object.entries(map).forEach(([k,v]) => {
+    const el = document.getElementById(`count-${k}`);
+    if (el) el.textContent = v;
+  });
+}
+
+// ── Actions ───────────────────────────────────────
+function toggleExpand(id) { expandedId = expandedId===id ? null : id; render(); }
+function toggleFav(id) { const p=phrases.find(x=>x.id===id); if(p){p.fav=!p.fav;savePhrases();render();} }
+function toggleDone(id) { const p=phrases.find(x=>x.id===id); if(p){p.done=!p.done;savePhrases();render();} }
+function deletePhrase(id) {
+  if (confirm('このフレーズを削除しますか？')) {
+    phrases = phrases.filter(x=>x.id!==id);
+    if (expandedId===id) expandedId=null;
+    savePhrases();
+    render();
+  }
+}
+function copyScoreLink(id) {
+  const p=phrases.find(x=>x.id===id);
+  if (p?.scoreId) { navigator.clipboard.writeText(`https://flat.io/score/${p.scoreId}`); alert('リンクをコピーしました'); }
+  else alert('スコアIDが未登録です');
+}
+
+// ── Modal ─────────────────────────────────────────
+let editingId = null;
+
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editingId = null;
+  selectedTags = [];
+  ['f-name','f-scoreid','f-notes','customTagInput'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  syncTagPillsToSelected();
+}
+
+function editPhrase(id) {
+  editingId = id;
+  const p = phrases.find(x=>x.id===id);
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-prog').value = p.prog;
+  document.getElementById('f-key').value = p.key;
+  document.getElementById('f-level').value = p.level;
+  document.getElementById('f-scoreid').value = p.scoreId;
+  document.getElementById('f-notes').value = p.notes;
+  selectedTags = [...p.tags];
+  syncTagPillsToSelected();
+  openModal();
+}
+
+function savePhrase() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('フレーズ名を入力してください'); return; }
+  const data = {
+    name,
+    prog: document.getElementById('f-prog').value,
+    key: document.getElementById('f-key').value,
+    level: document.getElementById('f-level').value,
+    scoreId: document.getElementById('f-scoreid').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    tags: [...selectedTags],
+  };
+  if (editingId) { Object.assign(phrases.find(x=>x.id===editingId), data); }
+  else { phrases.push({id:nextId++, fav:false, done:false, ...data}); }
+  closeModal();
+  savePhrases();
+  render();
+}
+
+// ── Filters ───────────────────────────────────────
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function setKeyFilter(k, btn) {
+  activeKey = k;
+  document.querySelectorAll('[data-key]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase();
+  render();
+});
+
+// モバイル検索
+const mobileSearch = document.getElementById('searchInputMobile');
+if (mobileSearch) {
+  mobileSearch.addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase();
+    document.getElementById('searchInput').value = e.target.value;
+    render();
+  });
+}
+
+// モバイルナビ
+function mobileNav(tab) {
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('bn-' + tab)?.classList.add('active');
+  const sidebar = document.getElementById('sidebar');
+  if (tab === 'filter') {
+    sidebar.classList.toggle('open');
+  } else {
+    sidebar.classList.remove('open');
+  }
+}
+
+// サイドバー外タップで閉じる
+document.addEventListener('click', e => {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && sidebar.classList.contains('open')) {
+    if (!sidebar.contains(e.target) && !e.target.closest('.bottom-nav')) {
+      sidebar.classList.remove('open');
+      document.getElementById('bn-filter')?.classList.remove('active');
+      document.getElementById('bn-list')?.classList.add('active');
+    }
+  }
+});
+
+// Enterキーでカスタムタグ追加
+document.getElementById('customTagInput').addEventListener('keydown', e => {
+  if (e.key==='Enter') { e.preventDefault(); addCustomTag(); }
+});
+
+render();
+
+// ── Settings & Flat.io API ────────────────────────
+let flatToken = '';
+let tokenVisible = false;
+let fetchedScores = [];
+
+function loadSettings() {
+  const saved = localStorage.getItem('flatToken');
+  if (saved) {
+    flatToken = saved;
+    document.getElementById('settingsBtn').classList.add('connected');
+    document.getElementById('syncBar').classList.add('show');
+  }
+}
+
+function saveSettings() {
+  const token = document.getElementById('s-token').value.trim();
+  flatToken = token;
+  if (token) {
+    localStorage.setItem('flatToken', token);
+    document.getElementById('settingsBtn').classList.add('connected');
+    document.getElementById('syncBar').classList.add('show');
+  } else {
+    localStorage.removeItem('flatToken');
+    document.getElementById('settingsBtn').classList.remove('connected');
+    document.getElementById('syncBar').classList.remove('show');
+  }
+  // Supabase設定を保存
+  const sbUrlVal = document.getElementById('s-sb-url').value.trim();
+  const sbKeyVal = document.getElementById('s-sb-key').value.trim();
+  if (sbUrlVal) localStorage.setItem('sbUrl', sbUrlVal);
+  if (sbKeyVal) localStorage.setItem('sbKey', sbKeyVal);
+  closeSettings();
+}
+
+function toggleTokenVisibility() {
+  tokenVisible = !tokenVisible;
+  const input = document.getElementById('s-token');
+  input.type = tokenVisible ? 'text' : 'password';
+  document.querySelector('.token-toggle').textContent = tokenVisible ? '隠す' : '表示';
+}
+
+function updateConnUI(ok, msg) {
+  const dot = document.getElementById('connDot');
+  const msgEl = document.getElementById('connMsg');
+  dot.className = 'conn-dot ' + (ok ? 'ok' : 'err');
+  msgEl.textContent = msg;
+  msgEl.style.color = ok ? '#7ab57a' : 'var(--terra)';
+}
+
+async function testConnection() {
+  const token = document.getElementById('s-token').value.trim();
+  if (!token) { updateConnUI(false, 'トークンを入力してください'); return; }
+  updateConnUI(false, '接続中…');
+  try {
+    const res = await fetch('https://api.flat.io/v2/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      updateConnUI(true, '接続成功 — ' + (data.name || data.username || 'ユーザー確認済み'));
+    } else {
+      updateConnUI(false, 'エラー: ' + res.status + ' トークンを確認してください');
+    }
+  } catch(e) {
+    updateConnUI(false, 'ネットワークエラー');
+  }
+}
+
+async function fetchCollectionScores() {
+  // 常にlocalStorageから最新トークンを取得
+  const token = localStorage.getItem('flatToken') || flatToken;
+  console.log('使用トークン先頭8文字:', token ? token.slice(0,8) : 'なし');
+  if (!token) {
+    document.getElementById('syncErr').textContent = 'トークン未設定 — ⚙ 設定から登録してください';
+    openSettings();
+    return;
+  }
+  document.getElementById('syncErr').textContent = '';
+  const listEl = document.getElementById('importList');
+  const actEl  = document.getElementById('importActions');
+  if (listEl) { listEl.style.display='block'; listEl.innerHTML='<div class="import-empty">取得中…</div>'; }
+  if (actEl)  actEl.style.display='none';
+
+  try {
+    // 1. コレクション一覧取得
+    const colRes = await fetch('https://api.flat.io/v2/collections?limit=50', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!colRes.ok) throw new Error('コレクション取得失敗: ' + colRes.status);
+    const collections = await colRes.json();
+
+    // 2. Jazz Phrase を探す
+    const jazzCol = collections.find(c => c.title && c.title.toLowerCase().includes('jazz phrase'));
+    if (!jazzCol) {
+      if (listEl) listEl.innerHTML = '<div class="import-empty">「Jazz Phrase」コレクションが見つかりませんでした</div>';
+      return;
+    }
+
+    // 3. スコア一覧取得
+    const scoreRes = await fetch('https://api.flat.io/v2/collections/' + jazzCol.id + '/scores?limit=100', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!scoreRes.ok) throw new Error('スコア取得失敗: ' + scoreRes.status);
+    fetchedScores = await scoreRes.json();
+
+    document.getElementById('syncStatus').textContent = '● Jazz Phrase: ' + fetchedScores.length + '件';
+
+    if (!fetchedScores.length) {
+      if (listEl) listEl.innerHTML = '<div class="import-empty">コレクションにスコアがありません</div>';
+      return;
+    }
+
+    // 取込済みを除外
+    const existingIds = new Set(phrases.map(p => p.scoreId).filter(Boolean));
+    const newScores = fetchedScores.filter(s => !existingIds.has(s.id));
+
+    if (listEl) {
+      if (!newScores.length) {
+        listEl.innerHTML = '<div class="import-empty">すべてのスコアは取り込み済みです ✓</div>';
+      } else {
+        listEl.innerHTML = newScores.map(s =>
+          '<div class="import-item">' +
+          '<input type="checkbox" id="imp-' + s.id + '" value="' + s.id + '" checked>' +
+          '<label for="imp-' + s.id + '" class="import-item-title">' + esc(s.title || '(無題)') + '</label>' +
+          '<span class="import-item-id">' + s.id.slice(0,8) + '…</span>' +
+          '</div>'
+        ).join('');
+        if (actEl) actEl.style.display = 'block';
+      }
+    }
+  } catch(e) {
+    const msg = e.message || 'エラーが発生しました';
+    if (listEl) listEl.innerHTML = '<div class="import-empty" style="color:var(--terra)">' + msg + '</div>';
+    document.getElementById('syncErr').textContent = msg;
+  }
+}
+
+function importSelected() {
+  const checkboxes = document.querySelectorAll('#importList input[type=checkbox]:checked');
+  let added = 0;
+  checkboxes.forEach(cb => {
+    const score = fetchedScores.find(s => s.id === cb.value);
+    if (!score || phrases.find(p => p.scoreId === score.id)) return;
+    phrases.push({
+      id: nextId++, fav: false, done: false,
+      name: score.title || '(無題)',
+      prog: 'other', key: 'C', level: 'intermediate',
+      scoreId: score.id, tags: [], notes: '',
+    });
+    added++;
+  });
+  closeSettings();
+  savePhrases();
+  render();
+  if (added) alert(added + '件追加しました！\nコード進行・キー・タグを編集してください。');
+}
+
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+  const saved = localStorage.getItem('flatToken') || '';
+  document.getElementById('s-token').value = saved;
+  if (saved) updateConnUI(true, 'トークン設定済み');
+  else updateConnUI(false, '未接続');
+  // Supabase fields
+  document.getElementById('s-sb-url').value = localStorage.getItem('sbUrl') || '';
+  document.getElementById('s-sb-key').value = localStorage.getItem('sbKey') || '';
+  const hasSb = localStorage.getItem('sbUrl') && localStorage.getItem('sbKey');
+  updateSbUI(!!hasSb, hasSb ? '設定済み' : '未設定');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+  const listEl = document.getElementById('importList');
+  const actEl  = document.getElementById('importActions');
+  if (listEl) listEl.style.display = 'none';
+  if (actEl)  actEl.style.display  = 'none';
+}
+
+loadSettings();
+loadFromSupabase();
+
+// ── Supabase ──────────────────────────────────────
+let sbUrl = '';
+let sbKey = '';
+
+function loadSupabaseConfig() {
+  sbUrl = localStorage.getItem('sbUrl') || '';
+  sbKey = localStorage.getItem('sbKey') || '';
+  if (sbUrl && sbKey) {
+    updateSbUI(true, '設定済み');
+  }
+}
+
+function updateSbUI(ok, msg) {
+  const dot = document.getElementById('sbDot');
+  const msgEl = document.getElementById('sbMsg');
+  if (!dot || !msgEl) return;
+  dot.className = 'conn-dot ' + (ok ? 'ok' : 'err');
+  msgEl.textContent = msg;
+  msgEl.style.color = ok ? '#7ab57a' : 'var(--terra)';
+}
+
+async function testSupabase() {
+  const url = document.getElementById('s-sb-url').value.trim();
+  const key = document.getElementById('s-sb-key').value.trim();
+  if (!url || !key) { updateSbUI(false, 'URLとキーを入力してください'); return; }
+  updateSbUI(false, '接続中…');
+  try {
+    const res = await fetch(url + '/rest/v1/phrases?limit=1', {
+      headers: {
+        'apikey': key,
+        'Authorization': 'Bearer ' + key,
+      }
+    });
+    if (res.ok) {
+      updateSbUI(true, '接続成功！');
+    } else {
+      updateSbUI(false, 'エラー: ' + res.status);
+    }
+  } catch(e) {
+    updateSbUI(false, 'ネットワークエラー');
+  }
+}
+
+async function loadFromSupabase() {
+  sbUrl = localStorage.getItem('sbUrl') || '';
+  sbKey = localStorage.getItem('sbKey') || '';
+  if (!sbUrl || !sbKey) return;
+  try {
+    const res = await fetch(sbUrl + '/rest/v1/phrases?order=id', {
+      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.length) return;
+    phrases = data.map(r => ({
+      id: r.id,
+      name: r.name,
+      prog: r.prog,
+      key: r.key,
+      level: r.level,
+      scoreId: r.score_id,
+      fav: r.fav,
+      done: r.done,
+      tags: r.tags || [],
+      notes: r.notes || '',
+    }));
+    nextId = Math.max(...phrases.map(p => p.id)) + 1;
+    localStorage.setItem('jazzPhrases', JSON.stringify(phrases));
+    render();
+  } catch(e) {
+    console.log('Supabase load error:', e);
+  }
+}
+
+async function syncToSupabase() {
+  sbUrl = localStorage.getItem('sbUrl') || '';
+  sbKey = localStorage.getItem('sbKey') || '';
+  if (!sbUrl || !sbKey) return;
+  // upsert all phrases
+  const rows = phrases.map(p => ({
+    id: p.id,
+    name: p.name,
+    prog: p.prog,
+    key: p.key,
+    level: p.level,
+    score_id: p.scoreId,
+    fav: p.fav,
+    done: p.done,
+    tags: p.tags,
+    notes: p.notes,
+  }));
+  try {
+    await fetch(sbUrl + '/rest/v1/phrases', {
+      method: 'POST',
+      headers: {
+        'apikey': sbKey,
+        'Authorization': 'Bearer ' + sbKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(rows),
+    });
+  } catch(e) {
+    console.log('Supabase sync error:', e);
+  }
+}
+</script>
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal settings-modal">
+    <h2>⚙ Flat.io 設定</h2>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Personal Access Token</div>
+      <div class="field">
+        <label>トークン</label>
+        <div class="token-wrap">
+          <input type="password" id="s-token" placeholder="Flat.io Personal Access Token を貼り付け…">
+          <button class="token-toggle" onclick="toggleTokenVisibility()">表示</button>
+        </div>
+        <div class="conn-status" id="connStatus">
+          <span class="conn-dot" id="connDot"></span>
+          <span id="connMsg">未接続</span>
+        </div>
+        <button class="btn-test" onclick="testConnection()">接続テスト</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Jazz Phrase コレクションから取り込み</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Flat.io の「Jazz Phrase」コレクション内のスコアを取得してフレーズとして追加します。</p>
+      <button class="btn-test" onclick="fetchCollectionScores()">↻ スコア一覧を取得</button>
+      <div class="import-list" id="importList" style="display:none"></div>
+      <div id="importActions" style="display:none">
+        <button class="btn-import" onclick="importSelected()">選択したスコアを追加</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Supabase 設定</div>
+      <div class="field">
+        <label>Project URL</label>
+        <input type="text" id="s-sb-url" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Anon Public Key</label>
+        <input type="password" id="s-sb-key" placeholder="eyJhbGc...">
+      </div>
+      <button class="btn-test" onclick="testSupabase()">Supabase 接続テスト</button>
+      <div class="conn-status" id="sbStatus" style="margin-top:8px">
+        <span class="conn-dot" id="sbDot"></span>
+        <span id="sbMsg">未設定</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSettings()">閉じる</button>
+      <button class="btn-save" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
