@@ -200,8 +200,8 @@
     .card-head { padding:12px; }
 
     .panel-inner { padding:12px; gap:12px; }
-    .embed-real { height:160px; }
-    .embed-placeholder { height:160px; }
+    .embed-real { height:220px; }
+    .embed-placeholder { height:220px; }
 
     .modal { padding:16px; max-height:85vh; }
     .modal-row { flex-direction:column; gap:0; }
@@ -229,9 +229,9 @@
     .mobile-search-bar { display:none; }
   }
 
-  .embed-placeholder { background:#0e1620; border:1px dashed var(--border); border-radius:8px; height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); font-size:13px; }
+  .embed-placeholder { background:#0e1620; border:1px dashed var(--border); border-radius:8px; height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); font-size:13px; }
   .embed-placeholder .staff-icon { font-size:40px; opacity:.25; }
-  .embed-real { border-radius:8px; overflow:hidden; height:200px; }
+  .embed-real { border-radius:8px; overflow:hidden; height:260px; }
   .embed-real iframe { width:100%; height:100%; border:none; display:block; }
 
   .panel-right { display:flex; flex-direction:column; gap:10px; }
@@ -450,7 +450,7 @@
       <div class="tag-picker-section">
         <div class="tag-picker-cat" style="color:var(--tc-scale)">▸ スケール</div>
         <div class="tag-picker-pills" id="tp-scale"></div>
-        <div class="tag-picker-cat" style="color:var(--tc-approach)">▸ コード進行 / アプローチ</div>
+        <div class="tag-picker-cat" style="color:var(--tc-approach)">▸ アプローチ / その他進行</div>
         <div class="tag-picker-pills" id="tp-approach"></div>
         <div class="tag-picker-cat" style="color:var(--tc-rhythm)">▸ リズム</div>
         <div class="tag-picker-pills" id="tp-rhythm"></div>
@@ -496,12 +496,10 @@ const TAG_PRESETS = {
     'Altered scale', 'Whole tone', 'Diminished scale', 'Half-dim scale',
   ],
   approach: [
-    // コード進行
-    'ii-V-I', 'ii-V', 'ターンアラウンド', 'ブルース進行', 'リズムチェンジ',
-    // アプローチ法
     '半音アプローチ', 'クロマチック', 'エンクロージャー',
     'コードトーン', 'ガイドトーン', 'ダイアトニック',
     'トライトーン代理', '代理コード', 'アウトサイド',
+    'ブルース進行', 'リズムチェンジ',
   ],
   rhythm: [
     'シンコペ', 'トリプレット', '8分音符主体',
