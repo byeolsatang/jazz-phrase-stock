@@ -1176,30 +1176,46 @@ async function syncToSupabase() {
   sbUrl = localStorage.getItem('sbUrl') || '';
   sbKey = localStorage.getItem('sbKey') || '';
   if (!sbUrl || !sbKey) return;
-  // upsert all phrases
-  const rows = phrases.map(p => ({
-    id: p.id,
-    name: p.name,
-    prog: p.prog,
-    key: p.key,
-    level: p.level,
-    score_id: p.scoreId,
-    fav: p.fav,
-    done: p.done,
-    tags: p.tags,
-    notes: p.notes,
-  }));
+
   try {
-    await fetch(sbUrl + '/rest/v1/phrases', {
+    // まず全件削除してから再挿入（upsertのid競合を回避）
+    await fetch(sbUrl + '/rest/v1/phrases?id=gte.0', {
+      method: 'DELETE',
+      headers: {
+        'apikey': sbKey,
+        'Authorization': 'Bearer ' + sbKey,
+      },
+    });
+
+    // idなしで挿入
+    const rows = phrases.map(p => ({
+      name: p.name,
+      prog: p.prog,
+      key: p.key,
+      level: p.level,
+      score_id: p.scoreId,
+      fav: p.fav,
+      done: p.done,
+      tags: p.tags,
+      notes: p.notes,
+    }));
+
+    const res = await fetch(sbUrl + '/rest/v1/phrases', {
       method: 'POST',
       headers: {
         'apikey': sbKey,
         'Authorization': 'Bearer ' + sbKey,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates',
+        'Prefer': 'return=minimal',
       },
       body: JSON.stringify(rows),
     });
+    if (!res.ok) {
+      const err = await res.text();
+      console.log('Supabase sync error:', res.status, err);
+    } else {
+      console.log('Supabase sync success:', rows.length + '件');
+    }
   } catch(e) {
     console.log('Supabase sync error:', e);
   }
