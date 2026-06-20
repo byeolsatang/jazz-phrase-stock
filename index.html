@@ -450,7 +450,7 @@
       <div class="tag-picker-section">
         <div class="tag-picker-cat" style="color:var(--tc-scale)">▸ スケール</div>
         <div class="tag-picker-pills" id="tp-scale"></div>
-        <div class="tag-picker-cat" style="color:var(--tc-approach)">▸ アプローチ</div>
+        <div class="tag-picker-cat" style="color:var(--tc-approach)">▸ コード進行 / アプローチ</div>
         <div class="tag-picker-pills" id="tp-approach"></div>
         <div class="tag-picker-cat" style="color:var(--tc-rhythm)">▸ リズム</div>
         <div class="tag-picker-pills" id="tp-rhythm"></div>
@@ -484,23 +484,33 @@
 // ── Tag definitions ───────────────────────────────
 const TAG_PRESETS = {
   scale: [
+    // Bebop系
     'Bebop scale', 'Bebop 下降形', 'Bebop 上昇形',
-    'Pentatonic', 'Blues scale', 'Mixolydian',
-    'Dorian', 'Altered scale', 'Whole tone',
-    'Diminished scale', 'Lydian dominant', 'Half-dim scale',
+    // メジャー系
+    'Major scale', 'Lydian', 'Lydian dominant', 'Mixolydian',
+    // マイナー系
+    'Dorian', 'Harmonic minor', 'Harmonic minor 下降形', 'Melodic minor 上昇形', 'Melodic minor 下降形', 'Phrygian dominant',
+    // ペンタ・ブルース
+    'Major pentatonic', 'Minor pentatonic', 'Blues scale', 'Blue note追加',
+    // テンション・アウト系
+    'Altered scale', 'Whole tone', 'Diminished scale', 'Half-dim scale',
   ],
   approach: [
-    '半音アプローチ', 'クロマチック', 'トライトーン代理',
-    'コードトーン', 'ガイドトーン', 'アウトサイド',
-    'エンクロージャー', 'ダイアトニック', '代理コード',
+    // コード進行
+    'ii-V-I', 'ii-V', 'ターンアラウンド', 'ブルース進行', 'リズムチェンジ',
+    // アプローチ法
+    '半音アプローチ', 'クロマチック', 'エンクロージャー',
+    'コードトーン', 'ガイドトーン', 'ダイアトニック',
+    'トライトーン代理', '代理コード', 'アウトサイド',
   ],
   rhythm: [
     'シンコペ', 'トリプレット', '8分音符主体',
-    '16分音符', 'ターン', 'ロングトーン',
+    '16分音符', 'ターン', 'ロングトーン', 'ラン',
   ],
   source: [
     'Charlie Parker', 'John Coltrane', 'Bill Evans',
     'Herbie Hancock', 'McCoy Tyner', 'Oscar Peterson',
+    'Wynton Kelly', 'Red Garland', 'Bud Powell',
     '自作', 'セッション採譜',
   ],
 };
