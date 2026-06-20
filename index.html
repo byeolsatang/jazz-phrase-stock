@@ -9,7 +9,7 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:      #111820;
+    --bg:      #0a1018;
     --surface: #182030;
     --sur2:    #1e2a3a;
     --border:  #2a3d52;
@@ -114,7 +114,7 @@
   .stat-label { font-size:11px; color:var(--muted); }
 
   /* Card */
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }
+  .card { background:#1e2d40; border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }
   .card:hover { border-color:var(--steel); box-shadow:0 0 0 1px rgba(122,154,181,.2); }
   .card.expanded { border-color:var(--steel); }
   .card-head { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; }
@@ -358,17 +358,31 @@
       <div class="sidebar-label">キー</div>
       <div class="key-grid">
         <button class="key-btn active" data-key="all" onclick="setKeyFilter('all',this)">All</button>
-        <button class="key-btn" data-key="C"  onclick="setKeyFilter('C',this)">C</button>
-        <button class="key-btn" data-key="F"  onclick="setKeyFilter('F',this)">F</button>
-        <button class="key-btn" data-key="Bb" onclick="setKeyFilter('Bb',this)">B♭</button>
-        <button class="key-btn" data-key="Eb" onclick="setKeyFilter('Eb',this)">E♭</button>
-        <button class="key-btn" data-key="Ab" onclick="setKeyFilter('Ab',this)">A♭</button>
-        <button class="key-btn" data-key="Db" onclick="setKeyFilter('Db',this)">D♭</button>
-        <button class="key-btn" data-key="G"  onclick="setKeyFilter('G',this)">G</button>
-        <button class="key-btn" data-key="D"  onclick="setKeyFilter('D',this)">D</button>
-        <button class="key-btn" data-key="A"  onclick="setKeyFilter('A',this)">A</button>
-        <button class="key-btn" data-key="E"  onclick="setKeyFilter('E',this)">E</button>
-        <button class="key-btn" data-key="B"  onclick="setKeyFilter('B',this)">B</button>
+        <button class="key-btn" data-key="C"   onclick="setKeyFilter('C',this)">C</button>
+        <button class="key-btn" data-key="F"   onclick="setKeyFilter('F',this)">F</button>
+        <button class="key-btn" data-key="Bb"  onclick="setKeyFilter('Bb',this)">B♭</button>
+        <button class="key-btn" data-key="Eb"  onclick="setKeyFilter('Eb',this)">E♭</button>
+        <button class="key-btn" data-key="Ab"  onclick="setKeyFilter('Ab',this)">A♭</button>
+        <button class="key-btn" data-key="Db"  onclick="setKeyFilter('Db',this)">D♭</button>
+        <button class="key-btn" data-key="G"   onclick="setKeyFilter('G',this)">G</button>
+        <button class="key-btn" data-key="D"   onclick="setKeyFilter('D',this)">D</button>
+        <button class="key-btn" data-key="A"   onclick="setKeyFilter('A',this)">A</button>
+        <button class="key-btn" data-key="E"   onclick="setKeyFilter('E',this)">E</button>
+        <button class="key-btn" data-key="B"   onclick="setKeyFilter('B',this)">B</button>
+      </div>
+      <div class="sidebar-label" style="margin-top:8px">マイナー</div>
+      <div class="key-grid">
+        <button class="key-btn" data-key="Cm"  onclick="setKeyFilter('Cm',this)">Cm</button>
+        <button class="key-btn" data-key="Fm"  onclick="setKeyFilter('Fm',this)">Fm</button>
+        <button class="key-btn" data-key="Bbm" onclick="setKeyFilter('Bbm',this)">B♭m</button>
+        <button class="key-btn" data-key="Ebm" onclick="setKeyFilter('Ebm',this)">E♭m</button>
+        <button class="key-btn" data-key="Abm" onclick="setKeyFilter('Abm',this)">A♭m</button>
+        <button class="key-btn" data-key="Dbm" onclick="setKeyFilter('Dbm',this)">D♭m</button>
+        <button class="key-btn" data-key="Gm"  onclick="setKeyFilter('Gm',this)">Gm</button>
+        <button class="key-btn" data-key="Dm"  onclick="setKeyFilter('Dm',this)">Dm</button>
+        <button class="key-btn" data-key="Am"  onclick="setKeyFilter('Am',this)">Am</button>
+        <button class="key-btn" data-key="Em"  onclick="setKeyFilter('Em',this)">Em</button>
+        <button class="key-btn" data-key="Bm"  onclick="setKeyFilter('Bm',this)">Bm</button>
       </div>
     </div>
 
@@ -427,11 +441,20 @@
       <div class="field">
         <label>キー</label>
         <select id="f-key">
-          <option value="C">C</option><option value="F">F</option>
-          <option value="Bb">B♭</option><option value="Eb">E♭</option>
-          <option value="Ab">A♭</option><option value="Db">D♭</option>
-          <option value="G">G</option><option value="D">D</option>
-          <option value="A">A</option><option value="E">E</option><option value="B">B</option>
+          <optgroup label="メジャー">
+            <option value="C">C</option><option value="F">F</option>
+            <option value="Bb">B♭</option><option value="Eb">E♭</option>
+            <option value="Ab">A♭</option><option value="Db">D♭</option>
+            <option value="G">G</option><option value="D">D</option>
+            <option value="A">A</option><option value="E">E</option><option value="B">B</option>
+          </optgroup>
+          <optgroup label="マイナー">
+            <option value="Cm">Cm</option><option value="Fm">Fm</option>
+            <option value="Bbm">B♭m</option><option value="Ebm">E♭m</option>
+            <option value="Abm">A♭m</option><option value="Dbm">D♭m</option>
+            <option value="Gm">Gm</option><option value="Dm">Dm</option>
+            <option value="Am">Am</option><option value="Em">Em</option><option value="Bm">Bm</option>
+          </optgroup>
         </select>
       </div>
       <div class="field">
